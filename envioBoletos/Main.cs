@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using envioBoletos.MegaZap;
 
 namespace envioBoletos
 {
@@ -10,11 +11,11 @@ namespace envioBoletos
     {
 
 
-        static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Service service = new Service();
-            service.ExtractData();
-            service.ShowData();
+            service.InputUserData();
+            await service.LoadingTask();
         }
     }
 }
