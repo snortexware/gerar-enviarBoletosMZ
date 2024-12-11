@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using OpenQA.Selenium.DevTools;
 using envioBoletos.MegaZap;
 using OpenQA.Selenium.DevTools.V129.FedCm;
+using OpenQA.Selenium.DevTools.V129.Network;
 
 
 
@@ -16,22 +17,55 @@ using OpenQA.Selenium.DevTools.V129.FedCm;
 public class Service
 {
 
-    IWebDriver driver;
-    string codClient;
-    string valor;
-    string referente;
-    string cpf;
-    string vencimento;
-    string nome;
-    int countEnd;
+    private string codClient;
+    private string valor;
+    private string referente;
+    private string cpf;
+    private string vencimento;
+    private string nome;
+    private string number;
+
+
+    private IWebDriver driver;
 
 
     private Task? animationTask;
 
-    public void StartLoadingAnimation()
+
+
+    public async Task Loading()
+    {
+
+        try
+        {
+            StartLoadingAnimation();
+            await Task.Run(() => LoginBTV());
+            await Task.Run(() => ExtractMainData());
+            await StopLoadingAnimation();
+            await Task.Run(() => ShowData());
+            StartLoadingAnimation();
+            await Task.Run(() => InputDataDom());
+        }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine("algo deu errado", ex.Message);
+
+
+        }
+
+
+
+
+    }
+
+
+    public Service StartLoadingAnimation()
     {
         isLoading = true;
         animationTask = Task.Run(() => ShowLoadingAnimation());
+
+        return this;
     }
 
     public async Task StopLoadingAnimation()
@@ -81,7 +115,7 @@ public class Service
             options.AddUserProfilePreference(pref.Key, pref.Value);
         }
         options.AddArgument("--silent");
-        options.AddArgument("--log-level=3");
+        options.AddArgument("--log-level=OFF");
         options.AddArgument("--disable-popup-blocking");
 
         driver = new ChromeDriver(options);
@@ -120,6 +154,9 @@ public class Service
         valor = Console.ReadLine();
         Console.Write("A cobrança é referente a? ");
         referente = Console.ReadLine();
+        Console.Write("Para qual numero enviar ");
+        number = Console.ReadLine();
+
 
 
 
@@ -346,6 +383,18 @@ public class Service
         }
 
     }
+
+
+    internal string CodCliente => codClient;
+    internal string Nome => nome;
+    internal string Vencimento => vencimento;
+    internal string Valor => valor;
+    internal string Referente => referente;
+    internal string Cpf => cpf;
+    internal string Number => number;
+    internal IWebDriver Driver => driver;
+
+
 
 }
 

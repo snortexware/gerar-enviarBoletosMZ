@@ -14,8 +14,13 @@ namespace envioBoletos
         public static async Task Main(string[] args)
         {
             Service service = new Service();
-            service.InputUserData();
-            await service.LoadingTask();
+
+            SendData send = new SendData(service);
+
+            await send.StartProcessing();
+
+
+
         }
     }
 }
