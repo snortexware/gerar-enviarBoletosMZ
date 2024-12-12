@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using envioBoletos.MegaZap;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 
 namespace envioBoletos
 {
@@ -13,14 +15,14 @@ namespace envioBoletos
 
         public static async Task Main(string[] args)
         {
-            Service service = new Service();
+            Service service = new();
 
-            SendData send = new SendData(service);
+
+            SendData send = new SendData();
 
 
             service.InputUserData();
             await service.Loading();
-            await send.StartProcessing();
 
 
         }

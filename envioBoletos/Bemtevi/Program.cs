@@ -11,6 +11,8 @@ using envioBoletos.MegaZap;
 using OpenQA.Selenium.DevTools.V129.FedCm;
 using OpenQA.Selenium.DevTools.V129.Network;
 using System.IO;
+using OpenQA.Selenium.Firefox;
+using SeleniumExtras.WaitHelpers;
 
 
 
@@ -20,46 +22,33 @@ namespace envioBoletos
     public class Service
     {
 
-        private string codClient;
-        private string valor;
-        private string referente;
-        private string cpf;
-        private string vencimento;
-        private string nome;
-        private string number;
+        public string codClient { get; set; }
+        public string referente { get; set; }
+        public string cpf { get; set; }
+        public string vencimento { get; set; }
+        public string nome { get; set; }
+        public string number { get; set; }
+        public string valor { get; set; }
+        string clienteBoletoFolder;
 
+        public IWebDriver driver;
 
-        private IWebDriver driver;
 
 
         private Task? animationTask;
 
 
-
         public async Task Loading()
         {
 
-            try
-            {
-                StartLoadingAnimation();
-                await Task.Run(() => LoginBTV());
-                await Task.Run(() => ExtractMainData());
-                await StopLoadingAnimation();
-                await Task.Run(() => ShowData());
-                StartLoadingAnimation();
-                await Task.Run(() => InputDataDom());
-            }
-            catch (Exception ex)
-            {
-
-                Console.WriteLine("algo deu errado", ex.Message);
 
 
-            }
-            finally
-            {
-                driver.Quit();
-            }
+            StartLoadingAnimation();
+            await Task.Run(() => ExtractMainData());
+            await StopLoadingAnimation();
+            await Task.Run(() => ShowData());
+            StartLoadingAnimation();
+            await Task.Run(() => InputDataDom());
 
 
 
@@ -103,68 +92,6 @@ namespace envioBoletos
 
 
 
-
-
-        public void Configurations()
-        {
-            string clienteBoletoFolder = $@"C:\Users\Suporte Lucas\Documents\Boletos1\{nome}";
-
-            if (!Directory.Exists(clienteBoletoFolder))
-            {
-                Console.WriteLine(nome);
-                Console.WriteLine(clienteBoletoFolder);
-                Directory.CreateDirectory(clienteBoletoFolder);
-            }
-
-
-
-
-            ChromeOptions options = new ChromeOptions();
-            var chromePrefs = new Dictionary<string, object>
-        {
-            { "plugins.always_open_pdf_externally", true },
-            { "download.default_directory", clienteBoletoFolder },
-            { "download.prompt_for_download", false },
-            { "profile.default_content_settings.popups", 0 },
-        };
-
-            foreach (var pref in chromePrefs)
-            {
-                options.AddUserProfilePreference(pref.Key, pref.Value);
-
-            }
-            options.AddArgument("--silent");
-            options.AddArgument("--log-level=OFF");
-            options.AddArgument("--disable-popup-blocking");
-
-
-            driver = new ChromeDriver(options);
-
-
-        }
-
-
-
-
-
-        public void LoginBTV()
-        {
-
-            Configurations();
-
-            driver.Navigate().GoToUrl
-          ($"https://btv2.ksys.net.br/gramnet/bemtevi/cadastros/cliente.php?codCliente={codClient}");
-            driver.FindElement(By.Name("usuario")).SendKeys("lucas.moreira");
-            driver.FindElement(By.Name("senha")).SendKeys("Lucas.moreira1");
-            driver.FindElement(By.Name("acao")).Click();
-
-        }
-
-
-
-
-
-
         public void InputUserData()
         {
 
@@ -179,12 +106,63 @@ namespace envioBoletos
 
 
 
-
         }
+
+
+        public void Configurations()
+        {
+            var options = new ChromeOptions();
+
+            var chromePrefs = new Dictionary<string, object>
+        {
+            { "plugins.always_open_pdf_externally", true },
+            { "download.default_directory", clienteBoletoFolder },
+            { "download.prompt_for_download", false },
+            { "profile.default_content_settings.popups", 0 },
+        };
+
+            foreach (var pref in chromePrefs)
+            {
+                options.AddUserProfilePreference(pref.Key, pref.Value);
+
+            }
+
+
+            options.AddArgument("--silent");
+            options.AddArgument("--log-level=OFF");
+            options.AddArgument("--disable-popup-blocking");
+
+
+
+
+            driver = new ChromeDriver(options);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         public void ExtractMainData()
         {
+
+            driver = new ChromeDriver();
+
+            driver.Navigate().GoToUrl
+          ($"https://btv2.ksys.net.br/gramnet/bemtevi/cadastros/cliente.php?codCliente={codClient}");
+            driver.FindElement(By.Name("usuario")).SendKeys("lucas.moreira");
+            driver.FindElement(By.Name("senha")).SendKeys("Lucas.moreira1");
+            driver.FindElement(By.Name("acao")).Click();
 
 
             IWebElement elemento = driver.FindElement(By.XPath($"//a[starts-with(@href, 'cob_admin.php?codigo=') and contains(@href, 'codCliente={codClient}')]"));
@@ -194,6 +172,15 @@ namespace envioBoletos
             IWebElement extractedName = driver.FindElement(By.TagName("h1"));
 
             nome = extractedName.Text;
+            clienteBoletoFolder = $@"C:\Users\lucas\Documents\Boletos1\{nome}";
+
+
+            if (!Directory.Exists(clienteBoletoFolder))
+            {
+                Console.WriteLine(nome);
+                Console.WriteLine(clienteBoletoFolder);
+                Directory.CreateDirectory(clienteBoletoFolder);
+            }
 
             // Um dia eu aprendo a usar REGEX
             vencimento = Regex.Replace(textoDoElemento, @"\D", "");
@@ -206,6 +193,7 @@ namespace envioBoletos
 
             cpf = Regex.Replace(extractedValue, @"\D*(\d{3})\.(\d{3})\.(\d{3})-(\d{2})", "$3-$4");
 
+            driver.Quit();
         }
 
 
@@ -258,8 +246,17 @@ namespace envioBoletos
         public void InputDataDom()
         {
 
+            Configurations();
+
+
+
+
+
             Console.WriteLine(isLoading);
             driver.Navigate().GoToUrl($"https://btv2.ksys.net.br/gramnet/bemtevi/cadastros/adicionar_especiais_novo.php?codCliente={codClient}");
+            driver.FindElement(By.Name("usuario")).SendKeys("lucas.moreira");
+            driver.FindElement(By.Name("senha")).SendKeys("Lucas.moreira1");
+            driver.FindElement(By.Name("acao")).Click();
 
 
             IList<IWebElement> Atag = driver.FindElements(By.TagName("a"));
@@ -371,48 +368,39 @@ namespace envioBoletos
             Console.WriteLine("Gerado com sucesso");
 
 
-            //Thread.Sleep(2000);
+            Thread.Sleep(2000);
 
-            //driver.Navigate().GoToUrl($"https://btv2.ksys.net.br/gramnet/bemtevi/cadastros/rel_cob.php?codCliente={codClient}");
+            driver.Navigate().GoToUrl($"https://btv2.ksys.net.br/gramnet/bemtevi/cadastros/rel_cob.php?codCliente={codClient}");
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
-
-            //string test = referente + " (especial)";
-
-
-            //IList<IWebElement> teste = driver.FindElements(By.TagName("td"));
-            //IWebElement boletoTD;
-            //string test1 = referente + " (especial)";
-
-            //for (int i = 0; i < teste.Count; i++)
-            //{
-            //    boletoTD = teste[i].FindElement(By.XPath($"//table[@class='caixa']//td[text()='{test1}']"));
-
-            //    Console.WriteLine(boletoTD.Text);
+            wait.Until(ExpectedConditions.ElementIsVisible(By.TagName("td")));
 
 
-            //    IWebElement nextSiblingTr = boletoTD.FindElement(By.XPath("./ancestor::tr/following-sibling::tr[6]"));
-            //    Console.WriteLine(nextSiblingTr.Text);
+            string test = referente + " (especial)";
 
 
-            //    IWebElement elemento = nextSiblingTr.FindElement(By.XPath($"//a[starts-with(@href, 'impressao_boleto.php?') and contains(@href, 'acao=imprimirBoleto')]"));
+            IList<IWebElement> teste = driver.FindElements(By.TagName("td"));
+            IWebElement boletoTD;
+            string test1 = referente + " (especial)";
 
-            //    elemento.Click();
+
+            boletoTD = driver.FindElement(By.XPath($"//table[@class='caixa']//td[text()='{test1}']"));
+
+            Console.WriteLine(boletoTD.Text);
 
 
-            //    i++;
 
-            //}
+            var imprimirBoletoLink = boletoTD.FindElement(By.XPath("../following-sibling::tr//a[contains(text(), 'Imprimir boleto')]"));
+            Thread.Sleep(2000);
+            IJavaScriptExecutor jsExecutor2 = (IJavaScriptExecutor)driver;
+            jsExecutor2.ExecuteScript("arguments[0].scrollIntoView(true);", imprimirBoletoLink);
+            jsExecutor2.ExecuteScript("arguments[0].click();", imprimirBoletoLink);
+
+            Thread.Sleep(4000);
+            driver.Quit();
 
         }
 
-
-        internal string CodCliente => codClient;
-        internal string Nome => nome;
-        internal string Vencimento => vencimento;
-        internal string Valor => valor;
-        internal string Referente => referente;
-        internal string Cpf => cpf;
-        internal string Number => number;
 
     }
 
