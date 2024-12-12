@@ -17,8 +17,10 @@ namespace envioBoletos
 
             SendData send = new SendData(service);
 
-            await send.StartProcessing();
 
+            service.InputUserData();
+            await service.Loading();
+            await send.StartProcessing();
 
 
         }
