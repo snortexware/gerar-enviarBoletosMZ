@@ -23,7 +23,7 @@ namespace envioBoletos
 
             service.InputUserData();
             await service.Loading();
-            await send.StartProcessing(service.cpf, service.vencimento, service.nome, service.number);
+            await send.StartProcessing(service.cpf, service.vencimento, service.nome, service.number, service.codSuporte, service.valor);
 
 
         }

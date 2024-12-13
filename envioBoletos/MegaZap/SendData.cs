@@ -1,24 +1,35 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.DevTools.V129.Network;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using Selenium.DefaultWaitHelpers;
 using SeleniumExtras.WaitHelpers;
+using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using System.IO;
+using iText.Kernel.Pdf.Canvas.Parser;
+
 
 namespace envioBoletos.MegaZap
 {
+
+
     internal class SendData : Service
     {
         public IWebDriver _driver;
+        public string confirm;
 
-        public async Task StartProcessing(string cpf, string vencimento, string nome, string number)
+        public async Task StartProcessing(string cpf, string vencimento, string nome, string number, string codSuporte, string valor)
         {
             _driver = new ChromeDriver();
             Service service = new Service().StartLoadingAnimation();
 
+            await Task.Run(() => ReadPdf(nome));
             service.StartLoadingAnimation();
             await Task.Run(() => MzLogin());
-            await Task.Run(() => AddNumber(cpf, vencimento, nome, number));
+            await Task.Run(() => AddNumber(cpf, vencimento, nome, number, codSuporte, valor));
 
         }
 
@@ -44,8 +55,67 @@ namespace envioBoletos.MegaZap
 
         }
 
+        public void ReadPdf(string nome)
+        {
 
-        public void AddNumber(string cpf, string vencimento, string nome, string number)
+
+
+            var pdfPath = @$"C:\Users\Suporte Lucas\Documents\Boletos1\{nome}";
+
+            string[] pdfFiles = Directory.GetFiles(pdfPath, "*.pdf");
+
+            if (pdfFiles.Length == 0)
+            {
+                Console.Write("no pdf found ");
+
+                return;
+            }
+
+
+            foreach (string pdfFile in pdfFiles)
+            {
+
+                PdfReader pdfReader = new PdfReader(pdfFile);
+                PdfDocument pdfDocument = new PdfDocument(pdfReader);
+
+                for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
+                {
+
+                    string texto = PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(i));
+
+                    Console.WriteLine(texto);
+
+                }
+
+
+
+
+
+
+
+            }
+
+
+
+            Console.Write("Este boleto é o boleto correto? Responda com yes e no: ");
+            confirm = Console.ReadLine();
+
+            if (confirm != "yes")
+            {
+                Console.Write("O boleto não vai ser enviado, abra o cadastro \n" +
+                    "e envie manualmente após a mensagem que vai ser enviada");
+
+
+            }
+
+
+
+
+        }
+
+
+
+        public void AddNumber(string cpf, string vencimento, string nome, string number, string codSuporte, string valor)
         {
             Service service = new Service();
 
@@ -68,6 +138,33 @@ namespace envioBoletos.MegaZap
             teste1.Click();
             teste1.SendKeys(number);
 
+
+            try
+            {
+                var element = _driver.FindElement(By.Name("nome"));
+                if (element.Displayed && element.Enabled) // Check if the element is interactable
+                {
+                    element.SendKeys(nome);
+                }
+                else
+                {
+                    Console.WriteLine("Element exists but is not interactable. Continuing execution...");
+                }
+            }
+            catch (ElementNotInteractableException ex)
+            {
+                Console.WriteLine($"Element is not interactable: {ex.Message}. Continuing execution...");
+            }
+            catch (NoSuchElementException ex)
+            {
+                Console.WriteLine($"Element not found: {ex.Message}. Continuing execution...");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            }
+
+
             IWebElement selectDepartment = _driver.FindElement(By.XPath(".//select[@ng-model='departamentoSelecionado.atendenteId']"));
             Thread.Sleep(2000);
 
@@ -82,16 +179,17 @@ namespace envioBoletos.MegaZap
 
             Thread.Sleep(2000);
 
+
             IWebElement textarea = _driver.FindElement(By.Id("novaMensagem"));
             Thread.Sleep(5000);
 
 
             IJavaScriptExecutor jsExecutor = (IJavaScriptExecutor)_driver;
             string message = $"Gr@mnet Telecom Caro Cliente,\n" +
-                             $"segue abaixo boleto referente a visita/suporte efetuado para o cadastro dos dados abaixo:\n" +
-                             $"Nome:{nome} \n" +
+                             $"segue abaixo boleto referente a visita/suporte no valor de {valor} efetuado para o cadastro dos dados abaixo:\n" +
+                             $"Nome: {nome} \n" +
                              $"Final CPF/CNPJ: {cpf} \n" +
-                             $"Protocolo de Atendimento Nº:{codClient} \n" +
+                             $"Protocolo de Atendimento Nº:{codSuporte} \n" +
                              $"Em caso de dúvidas, favor iniciar atendimento com nosso suporte! Digitando a opção 1.";
 
             jsExecutor.ExecuteScript("arguments[0].value = arguments[1];", textarea, message);
@@ -100,6 +198,33 @@ namespace envioBoletos.MegaZap
             Thread.Sleep(2000);
 
             _driver.FindElement(By.XPath(".//span[@ng-click='enviarMensagem()']")).Click();
+
+            Thread.Sleep(2000);
+
+            _driver.FindElement(By.CssSelector(".pull-left.dropdown-fab-container.ng-isolate-scope")).Click();
+
+            Thread.Sleep(2000);
+            var pdfPath = @$"C:\Users\Suporte Lucas\Documents\Boletos1\{nome}";
+
+            string[] pdfFiles = Directory.GetFiles(pdfPath, "*.pdf");
+
+            var inputvalue = _driver.FindElement(By.Id("fileInput"));
+
+            string selectedBoleto = pdfFiles[0];
+
+            Thread.Sleep(2000);
+
+            inputvalue.SendKeys(selectedBoleto);
+
+            Thread.Sleep(2000);
+
+            var botaoFinal = _driver.FindElement(By.XPath(".//button[@ng-click='onSendFiles()']"));
+
+
+            Thread.Sleep(2000);
+
+            botaoFinal.Click();
+
 
 
 

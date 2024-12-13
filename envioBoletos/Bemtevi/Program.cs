@@ -29,7 +29,9 @@ namespace envioBoletos
         public string nome { get; set; }
         public string number { get; set; }
         public string valor { get; set; }
-        string clienteBoletoFolder;
+        public string codSuporte { get; set; }
+
+        public string clienteBoletoFolder;
 
         public IWebDriver driver;
 
@@ -49,6 +51,8 @@ namespace envioBoletos
             await Task.Run(() => ShowData());
             StartLoadingAnimation();
             await Task.Run(() => InputDataDom());
+            await StopLoadingAnimation();
+
 
 
 
@@ -101,8 +105,10 @@ namespace envioBoletos
             valor = Console.ReadLine();
             Console.Write("A cobrança é referente a? ");
             referente = Console.ReadLine();
-            Console.Write("Para qual numero enviar ");
+            Console.Write("Para qual numero enviar? ");
             number = Console.ReadLine();
+            Console.Write("Qual seria o codigo da OS? ");
+            codSuporte = Console.ReadLine();
 
 
 
@@ -172,7 +178,7 @@ namespace envioBoletos
             IWebElement extractedName = driver.FindElement(By.TagName("h1"));
 
             nome = extractedName.Text;
-            clienteBoletoFolder = $@"C:\Users\lucas\Documents\Boletos1\{nome}";
+            clienteBoletoFolder = $@"C:\Users\Suporte Lucas\Documents\Boletos1\{nome}";
 
 
             if (!Directory.Exists(clienteBoletoFolder))
