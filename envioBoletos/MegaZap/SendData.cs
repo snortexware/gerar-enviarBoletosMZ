@@ -11,14 +11,14 @@ namespace envioBoletos.MegaZap
     {
         public IWebDriver _driver;
 
-        public async Task StartProcessing()
+        public async Task StartProcessing(string cpf, string vencimento, string nome, string number)
         {
             _driver = new ChromeDriver();
             Service service = new Service().StartLoadingAnimation();
 
             service.StartLoadingAnimation();
             await Task.Run(() => MzLogin());
-            await Task.Run(() => AddNumber());
+            await Task.Run(() => AddNumber(cpf, vencimento, nome, number));
 
         }
 
@@ -45,7 +45,7 @@ namespace envioBoletos.MegaZap
         }
 
 
-        public void AddNumber()
+        public void AddNumber(string cpf, string vencimento, string nome, string number)
         {
             Service service = new Service();
 
